@@ -82,7 +82,7 @@ IMPLS = ada awk bash basic c d chuck clojure coffee common-lisp cpp crystal cs d
 	haxe io java julia js kotlin logo lua make mal ocaml matlab miniMAL \
 	nim objc objpascal perl perl6 php pil plpgsql plsql powershell ps \
 	python r racket rpython ruby rust scala skew swift swift3 tcl ts vb vhdl \
-	vimscript
+	vimscript node
 
 EXTENSION = .mal
 
@@ -215,6 +215,7 @@ vb_STEP_TO_PROG =      vb/$($(1)).exe
 vhdl_STEP_TO_PROG =    vhdl/$($(1))
 vimscript_STEP_TO_PROG = vimscript/$($(1)).vim
 guile_STEP_TO_PROG =   guile/$($(1)).scm
+node_STEP_TO_PROG = node/$($(1)).js
 
 
 # Needed some argument munging
