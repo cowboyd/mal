@@ -4,12 +4,12 @@ function READ(string) {
   return string;
 }
 
-function EVAL(string) {
-  return string;
+function EVAL(expression) {
+  return expression;
 }
 
-function PRINT(string) {
-  return string;
+function PRINT(value) {
+  return value;
 }
 
 function rep(string) {
@@ -22,8 +22,7 @@ let io = readline.createInterface({
   prompt: "user> "
 });
 
-// fix problem with node readline when running
-// from test harness
+// disable terminal mode when running from test harnes
 // https://github.com/kanaka/mal/issues/258#issuecomment-299007084
 if (process.env['MAL_IMPL']) {
   io.terminal = false;
