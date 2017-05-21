@@ -22,8 +22,18 @@ let io = readline.createInterface({
   prompt: "user> "
 });
 
+// fix problem with node readline when running
+// from test harness
+// https://github.com/kanaka/mal/issues/258#issuecomment-299007084
+if (process.env['MAL_IMPL']) {
+  io.terminal = false;
+}
+
 io.prompt();
 io.on('line', (line)=> {
-  io.output.write(rep(line) + "\n");
+  io.output.write(`${rep(line)}\n`);
   io.prompt();
+});
+io.on('close', ()=> {
+  io.output.write("\n");
 });
