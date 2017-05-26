@@ -22,9 +22,9 @@ let io = readline.createInterface({
   prompt: "user> "
 });
 
-// disable terminal mode when running from test harnes
+// disable terminal mode when running from test harness
 // https://github.com/kanaka/mal/issues/258#issuecomment-299007084
-if (process.env['MAL_IMPL']) {
+if (process.env['RAW']) {
   io.terminal = false;
 }
 
