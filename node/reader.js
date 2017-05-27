@@ -90,6 +90,9 @@ function readList(reader) {
     let read = readForm(reader);
     list = list.append(read.form);
     reader = read.reader;
+    if (!reader.currentToken) {
+      throw new Error('mismatched parens');
+    }
   }
   return {reader: reader.next, form: list.end(reader.currentToken)};
 }

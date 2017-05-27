@@ -32,7 +32,11 @@ if (process.env['RAW']) {
 
 io.prompt();
 io.on('line', (line)=> {
-  io.output.write(`${rep(line)}\n`);
+  try {
+    io.output.write(`${rep(line)}\n`);
+  } catch (e) {
+    io.output.write(e.message + "\n");
+  }
   io.prompt();
 });
 io.on('close', ()=> {
