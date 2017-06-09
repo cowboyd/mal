@@ -21,6 +21,18 @@ class MalList {
     return true;
   }
 
+  get isEmpty() {
+    return this.members.length === 0;
+  }
+
+  get cons() {
+    return this.members[0];
+  }
+
+  get cdr() {
+    return this.members.slice(1);
+  }
+
   append(object) {
     return new MalList(this, {members: this.members.concat(object)});
   }
@@ -32,14 +44,45 @@ class MalList {
   end(token) {
     return new MalList(this, {end: token});
   }
+
+  map(fn) {
+    return new MalList({
+      members: this.members.map(fn)
+    });
+  }
 }
 
 class MalAtom {
-  constructor(token) {
-    this.token = token;
+  constructor(props = {}) {
+    Object.assign(this, props);
   }
 
-  get isList() { return false; }
+  get string() {
+    if (this.isLiteral) {
+      return this.token.string;
+    } else {
+      return this.stringValue;
+    }
+  }
+}
+
+class MalInt extends MalAtom {
+
+  get isInt() { return true; }
+
+  get stringValue() {
+    return `${this.value}`;
+  }
+}
+
+
+class MalSymbol extends MalAtom {
+
+  get isSymbol() { return true; }
+
+  get stringValue() {
+    return this.value;
+  }
 }
 
 class Token {
@@ -98,10 +141,20 @@ function readList(reader) {
 }
 
 function readAtom(reader) {
+  let form = readAtomForm(reader.currentToken);
   return {
     reader: reader.next,
-    form: new MalAtom(reader.currentToken)
+    form
   };
 }
 
-module.exports = { Reader, tokenize, readString };
+function readAtomForm(token) {
+  if (/^-?\d+$/.test(token.string)) {
+    return new MalInt({token, value: parseInt(token.string)});
+  } else {
+    return new MalSymbol({token, value: token.string});
+  }
+}
+
+
+module.exports = { Reader, tokenize, readString, MalInt };
