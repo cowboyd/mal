@@ -11,7 +11,7 @@ function EVAL(form) {
 }
 
 function PRINT(value) {
-  return printer.printObject(value);
+  return printer.printObject(value, { printReadably: true });
 }
 
 function rep(string) {

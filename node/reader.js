@@ -21,6 +21,18 @@ class MalList {
     return true;
   }
 
+  get isEmpty() {
+    return this.members.length === 0;
+  }
+
+  get cons() {
+    return this.members[0];
+  }
+
+  get cdr() {
+    return this.members.slice(1);
+  }
+
   append(object) {
     return new MalList(this, {members: this.members.concat(object)});
   }
@@ -32,14 +44,51 @@ class MalList {
   end(token) {
     return new MalList(this, {end: token});
   }
+
+  map(fn) {
+    return new MalList({
+      members: this.members.map(fn)
+    });
+  }
 }
 
 class MalAtom {
-  constructor(token) {
-    this.token = token;
+  constructor(props = {}) {
+    Object.assign(this, props);
   }
 
-  get isList() { return false; }
+  get string() {
+    if (this.isLiteral) {
+      return this.token.string;
+    } else {
+      return this.stringValue;
+    }
+  }
+}
+
+class MalInt extends MalAtom {
+
+  get isInt() { return true; }
+
+  get stringValue() {
+    return `${this.value}`;
+  }
+}
+
+class MalString extends MalAtom {
+  get isString() { return true; }
+
+  get stringValue() { return this.value; }
+}
+
+
+class MalSymbol extends MalAtom {
+
+  get isSymbol() { return true; }
+
+  get stringValue() {
+    return this.value;
+  }
 }
 
 class Token {
@@ -98,10 +147,43 @@ function readList(reader) {
 }
 
 function readAtom(reader) {
+  let form = readAtomForm(reader.currentToken);
   return {
     reader: reader.next,
-    form: new MalAtom(reader.currentToken)
+    form
   };
 }
 
-module.exports = { Reader, tokenize, readString };
+function readAtomForm(token) {
+  if (/^-?\d+$/.test(token.string)) {
+    return new MalInt({token, value: parseInt(token.string)});
+  } else if (/^"/.test(token.string)) {
+    //unwrap from quotes -> ["helloworld"] becomes [hello world]
+    let encoded = token.string.slice(1, token.string.length - 1);
+    let value = "";
+    let search = /(\\\\|\\n|\\")/g;
+    let lastIndex = 0;
+    for (let hit = search.exec(encoded); hit !== null; hit = search.exec(encoded)) {
+      let [match] = hit;
+      let part = "";
+      if (match === '\\"') {
+        part = '"';
+      } else if (match === "\\\\") {
+        part = "\\";
+      } else if (match === "\\n") {
+        part = "\n";
+      } else {
+        throw new Error(`Unrecognized string '${part}' but  matched. If you see this error it is a very serious bug.`);
+      }
+      value = value.concat(encoded.slice(lastIndex, hit.index), part);
+      lastIndex = search.lastIndex;
+    }
+    value = value.concat(encoded.slice(lastIndex));
+    return new MalString({ token, value });
+  } else {
+    return new MalSymbol({ token, value: token.string });
+  }
+}
+
+
+module.exports = { Reader, tokenize, readString, MalInt };
