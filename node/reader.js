@@ -91,6 +91,25 @@ class MalSymbol extends MalAtom {
   }
 }
 
+let keywords = {};
+
+class MalKeyword extends MalAtom {
+
+  static for(string, token = undefined) {
+    let keyword = keywords[string];
+    if (!keyword) {
+      keyword = keywords[string] = new MalKeyword({ token, value: string });
+    }
+    return keyword;
+  }
+
+  get isKeyword() { return true; }
+
+  get stringValue() {
+    return `:${this.value}`;
+  }
+}
+
 class Token {
   constructor(match) {
     this.match = match;
@@ -157,6 +176,8 @@ function readAtom(reader) {
 function readAtomForm(token) {
   if (/^-?\d+$/.test(token.string)) {
     return new MalInt({token, value: parseInt(token.string)});
+  } else if (/^:/.test(token.string)) {
+    return MalKeyword.for(token.string.slice(1), token);
   } else if (/^"/.test(token.string)) {
     //unwrap from quotes -> ["helloworld"] becomes [hello world]
     let encoded = token.string.slice(1, token.string.length - 1);
