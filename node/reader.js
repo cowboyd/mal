@@ -75,6 +75,12 @@ class MalInt extends MalAtom {
   }
 }
 
+class MalString extends MalAtom {
+  get isString() { return true; }
+
+  get stringValue() { return this.value; }
+}
+
 
 class MalSymbol extends MalAtom {
 
@@ -151,8 +157,31 @@ function readAtom(reader) {
 function readAtomForm(token) {
   if (/^-?\d+$/.test(token.string)) {
     return new MalInt({token, value: parseInt(token.string)});
+  } else if (/^"/.test(token.string)) {
+    //unwrap from quotes -> ["helloworld"] becomes [hello world]
+    let encoded = token.string.slice(1, token.string.length - 1);
+    let value = "";
+    let search = /(\\\\|\\n|\\")/g;
+    let lastIndex = 0;
+    for (let hit = search.exec(encoded); hit !== null; hit = search.exec(encoded)) {
+      let [match] = hit;
+      let part = "";
+      if (match === '\\"') {
+        part = '"';
+      } else if (match === "\\\\") {
+        part = "\\";
+      } else if (match === "\\n") {
+        part = "\n";
+      } else {
+        throw new Error(`Unrecognized string '${part}' but  matched. If you see this error it is a very serious bug.`);
+      }
+      value = value.concat(encoded.slice(lastIndex, hit.index), part);
+      lastIndex = search.lastIndex;
+    }
+    value = value.concat(encoded.slice(lastIndex));
+    return new MalString({ token, value });
   } else {
-    return new MalSymbol({token, value: token.string});
+    return new MalSymbol({ token, value: token.string });
   }
 }
 
