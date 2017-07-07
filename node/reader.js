@@ -1,3 +1,5 @@
+const { assign } = Object;
+
 class Reader {
   constructor(props = {}) {
     Object.assign(this, {index: 0, tokens: []}, props);
@@ -12,10 +14,46 @@ class Reader {
   }
 }
 
-class MalList {
-  constructor(previous = { members: [] }, props = {}) {
-    Object.assign(this, previous,  props);
+class MalCollection {
+  static fromOpeningDelimeter(delimeter) {
+    switch (delimeter) {
+    case '(':
+      return MalList;
+    case '[':
+      return MalVector;
+    case '{':
+      return MalHashMap;
+    default:
+      throw new Error(`'${delimeter}' does not begin a collection`);
+    }
   }
+
+  constructor(previous = {}, props = {}) {
+    Object.assign(this, assign({ members: [] }, previous),  props);
+  }
+
+  begin(token) {
+    return new this.constructor(this, {start: token});
+  }
+
+  end(token) {
+    return new this.constructor(this, {end: token});
+  }
+
+  append(object) {
+    return new this.constructor(this, {members: this.members.concat(object)});
+  }
+
+  map(fn) {
+    return new this.constructor({
+      members: this.members.map(fn)
+    });
+  }
+}
+
+class MalList extends MalCollection {
+  static get openingDelimiter() { return '('; }
+  static get closingDelimiter() { return ')'; }
 
   get isList() {
     return true;
@@ -32,23 +70,65 @@ class MalList {
   get cdr() {
     return this.members.slice(1);
   }
+}
+
+class MalVector extends MalCollection {
+  static get openingDelimiter() { return '['; }
+  static get closingDelimiter() { return ']'; }
+
+  get isVector() {
+    return true;
+  }
+}
+
+class MalHashMap extends MalCollection {
+  static get openingDelimiter() { return '{'; }
+  static get closingDelimiter() { return '}'; }
+
+  constructor(previous = {}, props = {}) {
+    super(assign({ hash: {} }, previous),  props);
+  }
 
   append(object) {
-    return new MalList(this, {members: this.members.concat(object)});
+    let next = super.append(object);
+    if (next.isEven) {
+      let key = next.members[next.members.length - 2];
+      if (key.isKeyword || key.isString) {
+        let hashed = new MalHashMap(next, {hash: assign({}, next.hash, { [key.hashValue]: object })});
+        return hashed;
+      } else {
+        throw new Error(`hash map keys must either be strings or symbols, but ${key.stringValue} is a ${key.constructor.name}`);
+      }
+    } else {
+      return next;
+    }
   }
 
-  begin(token) {
-    return new MalList(this, {start: token});
+  get(key) {
+    return this.hash[key.hashValue];
   }
 
-  end(token) {
-    return new MalList(this, {end: token});
+  get isEven() {
+    return (this.members.length % 2) === 0;
   }
 
-  map(fn) {
-    return new MalList({
-      members: this.members.map(fn)
-    });
+  get isOdd() {
+    return !this.isEven;
+  }
+
+  get keys() {
+    return this.members.reduce((keys, member, index)=> {
+      if ((index % 2) === 0) {
+        return keys.concat(member);
+      } else {
+        return keys;
+      }
+    }, []);
+    return Object.keys(this.hash);
+  }
+
+  get isHashMap() {
+    return true;
   }
 }
 
@@ -79,6 +159,9 @@ class MalString extends MalAtom {
   get isString() { return true; }
 
   get stringValue() { return this.value; }
+
+  get hashValue() { return this.string; }
+
 }
 
 
@@ -108,6 +191,8 @@ class MalKeyword extends MalAtom {
   get stringValue() {
     return `:${this.value}`;
   }
+
+  get hashValue() { return `\u029E${this.value}`; }
 }
 
 class Token {
@@ -144,25 +229,26 @@ function readString(string) {
 }
 
 function readForm(reader) {
-  if (reader.currentToken.string === '(') {
-    return readList(reader);
+  if (/^[(\[{]$/.test(reader.currentToken.string)) {
+    return readCollection(reader);
   } else {
     return readAtom(reader);
   }
 }
 
-function readList(reader) {
-  let list = new MalList().begin(reader.currentToken);
+function readCollection(reader) {
+  let Collection = MalCollection.fromOpeningDelimeter(reader.currentToken.string);
+  let collection = new Collection().begin(reader.currentToken);
   reader = reader.next;
-  while (reader.currentToken.string !== ')') {
+  while (reader.currentToken.string !== Collection.closingDelimiter) {
     let read = readForm(reader);
-    list = list.append(read.form);
+    collection = collection.append(read.form);
     reader = read.reader;
     if (!reader.currentToken) {
-      throw new Error('mismatched parens');
+      throw new Error(`expected '${Collection.closingDelimiter}', but it never happened`);
     }
   }
-  return {reader: reader.next, form: list.end(reader.currentToken)};
+  return {reader: reader.next, form: collection.end(reader.currentToken)};
 }
 
 function readAtom(reader) {

@@ -1,7 +1,11 @@
-function printObject(object, { printReadably } = {}) {
+function printObject(object) {
   if (object.isList) {
     return `(${object.members.map(printObject).join(' ')})`;
-  } else if (object.isString && printReadably) {
+  } else if (object.isVector) {
+    return `[${object.members.map(printObject).join(' ')}]`;
+  } else if (object.isHashMap) {
+    return `{${object.keys.map(key => `${printObject(key)} ${printObject(object.get(key))}`).join(' ')}}`;
+  } else if (object.isString) {
     return encodeString(object.value);
   } else {
     return object.string;
