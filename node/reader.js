@@ -146,6 +146,22 @@ class MalAtom {
   }
 }
 
+class MalBoolean extends MalAtom {
+
+  get isBoolean() { return true; }
+
+  get isTrue() { return !!this.value; }
+
+  get isFalse() { return !this.isTrue; }
+
+  get stringValue() {
+    return (!!this.value).toString();
+  }
+}
+
+const TRUE = new MalBoolean({value: true});
+const FALSE = new MalBoolean({value: false});
+
 class MalInt extends MalAtom {
 
   get isInt() { return true; }
@@ -260,7 +276,11 @@ function readAtom(reader) {
 }
 
 function readAtomForm(token) {
-  if (/^-?\d+$/.test(token.string)) {
+  if (token.string === "true") {
+    return TRUE;
+  } else if (token.string === "false") {
+    return FALSE;
+  } else if (/^-?\d+$/.test(token.string)) {
     return new MalInt({token, value: parseInt(token.string)});
   } else if (/^:/.test(token.string)) {
     return MalKeyword.for(token.string.slice(1), token);
