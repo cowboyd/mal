@@ -1,0 +1,2 @@
+#!/bin/bash
+exec node_modules/.bin/ts-node $(dirname $0)/${STEP:-stepA_mal}.ts "${@}"

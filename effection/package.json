@@ -1,0 +1,22 @@
+{
+  "name": "mal",
+  "version": "1.0.0",
+  "description": "MAL implementation using typescript and effection",
+  "main": "index.js",
+  "repository": "https://github.com/cowboyd/mal.git",
+  "author": "Charles Lowell <cowboyd@frontside.io>",
+  "license": "MIT",
+  "private": true,
+  "dependencies": {
+    "@types/node": "^12.11.1",
+    "effection": "^0.3.0",
+    "ts-node": "^8.4.1",
+    "typescript": "^3.6.4"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^2.3.2",
+    "@typescript-eslint/parser": "^2.3.2",
+    "eslint": "^6.5.1",
+    "eslint-plugin-prefer-let": "^1.0.1"
+  }
+}
